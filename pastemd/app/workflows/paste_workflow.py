@@ -195,7 +195,8 @@ class PasteWorkflow:
             self._ensure_pandoc_integration()
             docx_bytes = self.pandoc_integration.convert_html_to_docx_bytes(
                 html_text=html_text,
-                reference_docx=config.get("reference_docx")
+                reference_docx=config.get("reference_docx"),
+                Keep_original_formula=config.get("Keep_original_formula", False)
             )
 
             # 3. 在内存中处理 DOCX 样式
@@ -287,7 +288,8 @@ class PasteWorkflow:
         self._ensure_pandoc_integration()
         docx_bytes = self.pandoc_integration.convert_to_docx_bytes(
             md_text=md_text,
-            reference_docx=config.get("reference_docx")
+            reference_docx=config.get("reference_docx"),
+            Keep_original_formula=config.get("Keep_original_formula", False)
         )
 
         # 3. 在内存中处理 DOCX 样式
@@ -455,7 +457,8 @@ class PasteWorkflow:
             self._ensure_pandoc_integration()
             docx_bytes = self.pandoc_integration.convert_to_docx_bytes(
                 md_text=md_text,
-                reference_docx=config.get("reference_docx")
+                reference_docx=config.get("reference_docx"),
+                Keep_original_formula=config.get("Keep_original_formula", False)
             )
 
             # 4. 在内存中处理 DOCX 样式
@@ -509,7 +512,8 @@ class PasteWorkflow:
             self._ensure_pandoc_integration()
             docx_bytes = self.pandoc_integration.convert_html_to_docx_bytes(
                 html_text=html_text,
-                reference_docx=config.get("reference_docx")
+                reference_docx=config.get("reference_docx"),
+                Keep_original_formula=config.get("Keep_original_formula", False)
             )
 
             if config.get("html_disable_first_para_indent", True):

@@ -1,5 +1,5 @@
 #define MyAppName "PasteMD"
-#define MyAppVersion "0.1.5.7"
+#define MyAppVersion "0.1.5.8"
 #define MyAppPublisher "RichQAQ"
 #define MyAppExeName "PasteMD.exe"
 ; AppUserModelID 用于 Win11 通知归属与图标

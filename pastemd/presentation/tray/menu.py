@@ -45,9 +45,8 @@ class TrayMenuManager:
     
     def build_menu(self) -> pystray.Menu:
         """构建托盘菜单"""
-        
         config = app_state.config
-        
+
         # 构建版本菜单项
         version_menu_items = [
             pystray.MenuItem(
@@ -56,8 +55,6 @@ class TrayMenuManager:
                 enabled=False
             ),
         ]
-        
-        # 如果有新版本，显示新版本号
         if self.latest_version:
             version_menu_items.append(
                 pystray.MenuItem(
@@ -73,9 +70,10 @@ class TrayMenuManager:
                     self._on_check_update
                 )
             )
-        
+
         language_menu = self._build_language_menu()
         html_formatting_menu = self._build_html_formatting_menu()
+        utility_menu = self._build_utility_menu()
 
         return pystray.Menu(
             pystray.MenuItem(
@@ -105,6 +103,7 @@ class TrayMenuManager:
                 checked=lambda item: config.get("move_cursor_to_end", True)
             ),
             html_formatting_menu,
+            utility_menu,
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(t("tray.menu.set_hotkey"), self._on_set_hotkey),
             pystray.Menu.SEPARATOR,
@@ -113,18 +112,6 @@ class TrayMenuManager:
                 self._on_toggle_keep,
                 checked=lambda item: config.get("keep_file", False)
             ),
-            # 废弃 Excel 相关选项，减少菜单复杂度
-            # pystray.Menu.SEPARATOR,
-            # pystray.MenuItem(
-            #     t("tray.menu.enable_excel"),
-            #     self._on_toggle_excel,
-            #     checked=lambda item: config.get("enable_excel", True)
-            # ),
-            # pystray.MenuItem(
-            #     t("tray.menu.keep_excel_format"),
-            #     self._on_toggle_excel_format,
-            #     checked=lambda item: config.get("excel_keep_format", True)
-            # ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(t("tray.menu.open_save_dir"), self._on_open_save_dir),
             pystray.MenuItem(t("tray.menu.open_log"), self._on_open_log),
@@ -140,6 +127,28 @@ class TrayMenuManager:
             ),
             pystray.MenuItem(t("tray.menu.quit"), self._on_quit)
         )
+
+    def _build_utility_menu(self) -> pystray.MenuItem:
+        """构建实用性功能（实验性）多选菜单"""
+        return pystray.MenuItem(
+            t("tray.menu.utility_features"),
+            pystray.Menu(
+                pystray.MenuItem(
+                    t("tray.menu.keep_original_formula"),
+                    self._on_toggle_keep_original_formula,
+                    checked=lambda item: app_state.config.get("Keep_original_formula", False)
+                ),
+            )
+        )
+
+    def _on_toggle_keep_original_formula(self, icon, item):
+        """切换保留原始数学公式实验性功能"""
+        current = app_state.config.get("Keep_original_formula", False)
+        app_state.config["Keep_original_formula"] = not current
+        self._save_config()
+        icon.menu = self.build_menu()
+        status = t("tray.status.keep_original_formula_on") if app_state.config["Keep_original_formula"] else t("tray.status.keep_original_formula_off")
+        self.notification_manager.notify("PasteMD", status, ok=True)
     
     # 菜单回调函数
     def _on_toggle_enabled(self, icon, item):

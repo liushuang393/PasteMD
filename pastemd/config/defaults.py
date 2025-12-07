@@ -23,6 +23,7 @@ if os.path.exists(os.path.join(os.path.dirname(sys.executable), "pandoc", "pando
             "strikethrough_to_del": True,
         },
         "move_cursor_to_end": True,  # 插入后光标移动到插入内容的末尾
+        "Keep_original_formula": False,  # 是否保留原始数学公式,不进行转换
         "language": "zh",  # UI 语言（默认简体中文）
     }
 else:
@@ -42,5 +43,6 @@ else:
             "strikethrough_to_del": True,
         },
         "move_cursor_to_end": True,  # 插入后光标移动到插入内容的末尾
+        "Keep_original_formula": False,  # 是否保留原始数学公式,不进行转换
         "language": "zh",  # UI 语言（默认简体中文）
     }

@@ -4,8 +4,12 @@ import os
 import subprocess
 from typing import Optional
 
+from ..config.paths import resource_path
+
 from ..core.errors import PandocError
 from ..utils.logging import log
+
+LUA_KEEP_ORIGINAL_FORMULA = resource_path("pastemd/lua/keep-latex-math.lua")
 
 
 class PandocIntegration:
@@ -38,7 +42,43 @@ class PandocIntegration:
             raise PandocError(f"Pandoc Error: {e}")
         self.pandoc_path = pandoc_path
 
-    def convert_to_docx_bytes(self, md_text: str, reference_docx: Optional[str] = None) -> bytes:
+    def _convert_html_to_md(self, html_text: str) -> str:
+        """
+        使用 Pandoc 将 HTML 转换为 Markdown。
+        """
+        cmd = [
+            self.pandoc_path,
+            "-f", "html+tex_math_dollars+raw_tex+tex_math_double_backslash+tex_math_single_backslash",
+            "-t", "markdown+tex_math_dollars+raw_tex",
+            "-o", "-",          # 输出到 stdout
+            "--wrap", "none",   # 不自动换行，方便你后处理
+        ]
+
+        startupinfo = None
+        creationflags = 0
+        if os.name == "nt":
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            creationflags = subprocess.CREATE_NO_WINDOW
+
+        result = subprocess.run(
+            cmd,
+            input=html_text.encode("utf-8"),  # 显式用 UTF-8 编码
+            capture_output=True,
+            text=False,                       # 二进制模式
+            shell=False,
+            startupinfo=startupinfo,
+            creationflags=creationflags,
+        )
+        if result.returncode != 0:
+            err = (result.stderr or b"").decode("utf-8", "ignore")
+            log(f"Pandoc HTML to MD error: {err}")
+            raise PandocError(err or "Pandoc HTML to Markdown conversion failed")
+
+        # stdout 也是 bytes，自行按 UTF-8 解码
+        return result.stdout.decode("utf-8", "ignore")
+
+    def convert_to_docx_bytes(self, md_text: str, reference_docx: Optional[str] = None, Keep_original_formula: bool = False) -> bytes:
         """
         用 stdin 喂入 Markdown，直接把 DOCX 从 stdout 读到内存（无任何输入文件写盘）
         """
@@ -49,6 +89,8 @@ class PandocIntegration:
             "-o", "-",
             "--highlight-style", "tango",
         ]
+        if Keep_original_formula:
+            cmd += ["--lua-filter", LUA_KEEP_ORIGINAL_FORMULA]
         if reference_docx:
             cmd += ["--reference-doc", reference_docx]
 
@@ -77,7 +119,7 @@ class PandocIntegration:
 
         return result.stdout
 
-    def convert_html_to_docx_bytes(self, html_text: str, reference_docx: Optional[str] = None) -> bytes:
+    def convert_html_to_docx_bytes(self, html_text: str, reference_docx: Optional[str] = None, Keep_original_formula: bool = False) -> bytes:
         """
         用 stdin 喂入 HTML，直接把 DOCX 从 stdout 读到内存（无任何输入文件写盘）
         
@@ -91,6 +133,10 @@ class PandocIntegration:
         Raises:
             PandocError: 转换失败时
         """
+        if Keep_original_formula:
+            md = self._convert_html_to_md(html_text)
+            return self.convert_to_docx_bytes(md, reference_docx, Keep_original_formula)
+        
         cmd = [
             self.pandoc_path,
             "-f", "html+tex_math_dollars+raw_tex+tex_math_double_backslash+tex_math_single_backslash",
