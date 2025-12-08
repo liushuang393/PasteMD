@@ -4,11 +4,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RICHQAQ/PasteMD/releases"><img src="https://img.shields.io/github/v/release/RICHQAQ/PasteMD?sort=semver&label=release"></a>
-  <a href="https://github.com/RICHQAQ/PasteMD/releases"><img src="https://img.shields.io/github/downloads/RICHQAQ/PasteMD/total?label=downloads"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/RICHQAQ/PasteMD"></a>
-  <img src="https://img.shields.io/badge/python-3.12%2B-3776ab">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Word%20%7C%20WPS-5e8d36">
+  <a href="https://github.com/RICHQAQ/PasteMD/releases">
+    <img src="https://img.shields.io/github/v/release/RICHQAQ/PasteMD?sort=semver&label=Release&style=flat-square&logo=github" alt="Release">
+  </a>
+  <a href="https://github.com/RICHQAQ/PasteMD/releases">
+    <img src="https://img.shields.io/github/downloads/RICHQAQ/PasteMD/total?label=Downloads&style=flat-square&logo=github" alt="Downloads">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/github/license/RICHQAQ/PasteMD?style=flat-square" alt="License">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Word%20%7C%20WPS-5e8d36?style=flat-square&logo=windows&logoColor=white" alt="Platform">
 </p>
 
 <p align="center"> 
@@ -17,10 +23,10 @@
   <a href="README.md">简体中文</a>
 </p>
 
-> 在写论文或报告时，从 ChatGPT/deepseek等ai网站中复制出来的公式在 Word 里总是乱码？md表格复制到 Excel 总是不行？**PasteMD 就是为了解决这个问题而生的，嘿嘿**
+> 在写论文或报告时，从 ChatGPT / DeepSeek 等 AI 网站中复制出来的公式在 Word 里总是乱码？Markdown 表格复制到 Excel 总是不行？**PasteMD 就是为了解决这个问题而生的，嘿嘿**
 > 
-> <img src="https://github.com/user-attachments/assets/edf4a953-e18f-4a5b-99bf-7ee559f77f4a"
-     alt="截图"
+> <img src="docs/gif/atri/igood.gif"
+     alt="我可是高性能的"
      width="100">
 
 一个常驻托盘的小工具：
@@ -64,7 +70,7 @@
 * 智能打开所需应用为Word/Excel。
 * 托盘菜单，可保留文件、查看日志/配置等。
 * 支持系统通知提醒。
-* 无黑框，无阻塞,稳定运行。
+* 无黑框，无阻塞，稳定运行。
 
 ---
 
@@ -88,7 +94,7 @@
 - ✅ **完美支持**：格式、样式、公式会均正确显示
 - ⚠️ **公式显示为代码**：数学公式会以 LaTeX 代码形式显示，需在 Word/WPS 中手动使用公式编辑器
 - ⚠️ **无法显示公式**：数学公式会丢失，需在 Word/WPS 中手动使用公式编辑器，自行输入公式内容
-- **豆包**：复制网页内容（含公式）需要在浏览器开启允许读取剪切板从可以正常，在URL地址栏左侧图标中设置
+- **豆包**：复制网页内容（含公式）前，需要在浏览器中开启“允许读取剪贴板”权限，可在 URL 地址栏左侧的图标中进行设置
 
 **测试说明：**
 1. **复制 Markdown**：点击 AI 回复中的"复制"按钮（通常复制的是 Markdown 格式，但是部分网站也会携带上html）
@@ -134,7 +140,7 @@
   "md_disable_first_para_indent": true,
   "html_disable_first_para_indent": true,
   "html_formatting": {
-    "strikethrough_to_del": true,
+    "strikethrough_to_del": true
   },
   "move_cursor_to_end": true,
   "Keep_original_formula": false,
@@ -213,11 +219,11 @@ pyinstaller --clean -F -w -n PasteMD
 
 感谢每一位 Star 的帮助，欢迎分享给更多小伙伴~，想要达成1k star🌟，我会努力的喵
 
-<img src="https://github.com/user-attachments/assets/44ccec5c-a7d2-4153-b57d-0b7255fffeaa"
-     alt="截图"
+<img src="docs/gif/atri/likeyou.gif"
+     alt="喜欢你"
      width="150">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=RICHQAQ/PasteMD&type=Date)](https://star-history.com/#RICHQAQ/PasteMD&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=RICHQAQ/PasteMD&type=date&legend=top-left)](https://www.star-history.com/#RICHQAQ/PasteMD&type=date&legend=top-left)
 
 ## 🍵支持与打赏
 
@@ -225,8 +231,8 @@ pyinstaller --clean -F -w -n PasteMD
 
 希望这个小工具对你有帮助，欢迎请作者👻喝杯咖啡☕～你的支持会让我更有动力持续修复问题、完善功能、适配更多场景并保持长期维护。感谢每一份支持！
 
-<img src="https://github.com/user-attachments/assets/5b4cf694-74e3-4b10-a1f9-2b92af13a525"
-     alt="截图"
+<img src="docs/gif/atri/flower.gif"
+     alt="送你一朵小花"
      width="150">
      
 | 支付宝 | 微信 |

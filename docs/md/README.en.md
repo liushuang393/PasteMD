@@ -4,11 +4,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RICHQAQ/PasteMD/releases"><img src="https://img.shields.io/github/v/release/RICHQAQ/PasteMD?sort=semver&label=release"></a>
-  <a href="https://github.com/RICHQAQ/PasteMD/releases"><img src="https://img.shields.io/github/downloads/RICHQAQ/PasteMD/total?label=downloads"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/RICHQAQ/PasteMD"></a>
-  <img src="https://img.shields.io/badge/python-3.12%2B-3776ab">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Word%20%7C%20WPS-5e8d36">
+  <a href="https://github.com/RICHQAQ/PasteMD/releases">
+    <img src="https://img.shields.io/github/v/release/RICHQAQ/PasteMD?sort=semver&label=Release&style=flat-square&logo=github" alt="Release">
+  </a>
+  <a href="https://github.com/RICHQAQ/PasteMD/releases">
+    <img src="https://img.shields.io/github/downloads/RICHQAQ/PasteMD/total?label=Downloads&style=flat-square&logo=github" alt="Downloads">
+  </a>
+  <a href="../../LICENSE">
+    <img src="https://img.shields.io/github/license/RICHQAQ/PasteMD?style=flat-square" alt="License">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Word%20%7C%20WPS-5e8d36?style=flat-square&logo=windows&logoColor=white" alt="Platform">
 </p>
 
 <p align="center">
@@ -19,8 +25,8 @@
 
 > When writing papers or reports, do formulas copied from AI tools (like ChatGPT or DeepSeek) turn into garbled text in Word? Do Markdown tables fail to paste correctly into Excel? **PasteMD was built specifically to solve these problems.**
 > 
-> <img src="https://github.com/user-attachments/assets/edf4a953-e18f-4a5b-99bf-7ee559f77f4a"
-     alt="截图"
+> <img src="../../docs/gif/atri/igood.gif"
+     alt="I am good"
      width="100">
 
 PasteMD is a lightweight tray app that watches your clipboard, converts Markdown or HTML-rich text to DOCX through Pandoc, and pastes the result straight into the caret position of Word or WPS. It understands Markdown tables and can paste them directly into Excel with formatting preserved, and it recognizes HTML rich text (except math) copied from web pages.
@@ -124,7 +130,7 @@ The first launch creates a `config.json` file. Edit it directly, then use the tr
   "md_disable_first_para_indent": true,
   "html_disable_first_para_indent": true,
   "html_formatting": {
-    "strikethrough_to_del": true,
+    "strikethrough_to_del": true
   },
   "move_cursor_to_end": true,
   "Keep_original_formula": false,
@@ -198,11 +204,11 @@ The compiled executable will be placed in `dist/PasteMD.exe`.
 
 Every star helps — thank you for sharing PasteMD with more users.
 
-<img src="https://github.com/user-attachments/assets/44ccec5c-a7d2-4153-b57d-0b7255fffeaa"
-     alt="截图"
+<img src="../../docs/gif/atri/likeyou.gif"
+     alt="like you"
      width="150">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=RICHQAQ/PasteMD&type=Date)](https://star-history.com/#RICHQAQ/PasteMD&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=RICHQAQ/PasteMD&type=date&legend=top-left)](https://www.star-history.com/#RICHQAQ/PasteMD&type=date&legend=top-left)
 
 ---
 
@@ -210,8 +216,8 @@ Every star helps — thank you for sharing PasteMD with more users.
 
 If PasteMD saves you time, consider buying the author a coffee — your support helps prioritize fixes, enhancements, and new integrations.
 
-<img src="https://github.com/user-attachments/assets/5b4cf694-74e3-4b10-a1f9-2b92af13a525"
-     alt="截图"
+<img src="../../docs/gif/atri/flower.gif"
+     alt="give you a flower"
      width="150">
 
 | Alipay | WeChat |
@@ -222,4 +228,4 @@ If PasteMD saves you time, consider buying the author a coffee — your support 
 
 ## License
 
-This project is released under the [MIT License](LICENSE).
+This project is released under the [MIT License](../../LICENSE).
