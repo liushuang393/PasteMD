@@ -62,7 +62,7 @@ PasteMD is a lightweight tray app that watches your clipboard, converts Markdown
 
 - Global hotkey (default `Ctrl+B`) to paste the latest Markdown/HTML clipboard snapshot as DOCX.
 - Automatically recognizes Markdown tables, converts them to spreadsheets, and pastes into Excel while keeping bold/italic/code formats.
-- Recognizes HTML rich text (except math) copied from web pages and converts/pastes into Word/WPS.
+- Recognizes HTML rich text copied from web pages and converts/pastes into Word/WPS.
 - Detects the foreground target app (Word, WPS, or Excel) and opens the correct program when needed.
 - Tray menu for toggling features, viewing logs, reloading config, and checking for updates.
 - Optional toast notifications and background logging for every conversion.
