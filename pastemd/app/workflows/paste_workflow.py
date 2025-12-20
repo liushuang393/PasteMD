@@ -28,7 +28,6 @@ from ...config.defaults import DEFAULT_CONFIG
 from ...config.loader import ConfigLoader
 from .output_executor import OutputExecutor
 from ...core.errors import ClipboardError, PandocError, InsertError
-from ...integrations.pandoc import PandocIntegration
 from ...core.types import NoAppAction
 from ...utils.win32.memfile import EphemeralFile
 from ...utils.html_analyzer import is_plain_html_fragment
@@ -46,7 +45,6 @@ class PasteWorkflow:
         self.notification_manager = NotificationManager()
         self.doc_generator = DocumentGeneratorService()
         self.output_executor = OutputExecutor(self.notification_manager)
-        self.pandoc_integration = None  # 延迟初始化
     
     def execute(self) -> None:
         """执行完整的转换和插入流程"""
@@ -327,19 +325,8 @@ class PasteWorkflow:
             log(f"Retrieved HTML from clipboard, length: {len(html_text)}")
             
             # 2. 生成 DOCX 字节流
-            self._ensure_pandoc_integration()
-            if self.pandoc_integration is None:
-                # 已经在 _ensure_pandoc_integration 中显示了错误通知
-                return
-            
-            docx_bytes = self.pandoc_integration.convert_html_to_docx_bytes(
-                html_text=html_text,
-                reference_docx=config.get("reference_docx"),
-                Keep_original_formula=config.get("Keep_original_formula", False),
-                enable_latex_replacements=config.get("enable_latex_replacements", True),
-                custom_filters=config.get("pandoc_filters", []),
-                cwd=config.get("save_dir"),
-            )
+            # 使用 DocumentGeneratorService 统一处理转换和样式（如首行缩进）
+            docx_bytes = self.doc_generator.convert_html_to_docx_bytes(html_text, config)
 
             # 3. 使用临时文件插入
             temp_dir = config.get("temp_dir")  # 可选：支持 RAM 盘目录
@@ -504,28 +491,6 @@ class PasteWorkflow:
                 ok=False
             )
 
-    def _ensure_pandoc_integration(self) -> None:
-        """确保 Pandoc 集成已初始化"""
-        if self.pandoc_integration is None:
-            pandoc_path = app_state.config.get("pandoc_path", "pandoc")
-            try:
-                self.pandoc_integration = PandocIntegration(pandoc_path)
-            except PandocError as e:
-                log(f"Failed to initialize PandocIntegration: {e}")
-                try:
-                    self.pandoc_integration = PandocIntegration(DEFAULT_CONFIG.get("pandoc_path", "pandoc"))
-                    app_state.config["pandoc_path"] = DEFAULT_CONFIG["pandoc_path"]
-                    config_loader = ConfigLoader()
-                    config_loader.save(config=app_state.config)
-                except Exception as e2:
-                    log(f"Retry to initialize PandocIntegration failed: {e2}")
-                    self.notification_manager.notify(
-                        "PasteMD",
-                        t("workflow.pandoc.init_failed"),
-                        ok=False
-                    )
-                    self.pandoc_integration = None
-    
     def _handle_no_app_flow(self, md_text: str, config: dict, is_html: bool = False, html_text: Optional[str] = None) -> None:
         """
         无应用检测时的处理流程：支持多种动作模式
