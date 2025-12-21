@@ -1,4 +1,4 @@
-"""Document generator service - centralized DOCX generation and conversion."""
+"""Document generator - centralized DOCX generation and conversion."""
 
 from typing import Optional
 
@@ -11,7 +11,7 @@ from ...config.defaults import DEFAULT_CONFIG
 from ...config.loader import ConfigLoader
 
 
-class DocumentGeneratorService:
+class DocumentGenerator:
     """
     文档生成服务
     

@@ -4,7 +4,7 @@ import sys
 
 # 导出基类
 from .base import BaseDocumentPlacer
-from .generator import DocumentGeneratorService
+from .generator import DocumentGenerator
 
 # 导出类型
 from ...core.types import PlacementResult, PlacementMethod
@@ -32,5 +32,5 @@ __all__ = [
     "PlacementMethod",
     "WordPlacer",
     "WPSPlacer",
-    "DocumentGeneratorService",
+    "DocumentGenerator",
 ]

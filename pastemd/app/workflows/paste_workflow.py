@@ -20,7 +20,7 @@ from ...domains.awakener import AppLauncher
 from ...integrations.pandoc import PandocIntegration
 from ...domains.document.word import WordInserter
 from ...domains.document.wps import WPSInserter
-from ...domains.document.generator import DocumentGeneratorService
+from ...domains.document.generator import DocumentGenerator
 from ...domains.spreadsheet.parser import parse_markdown_table
 from ...domains.spreadsheet.win32.excel_inserter import MSExcelInserter
 from ...domains.spreadsheet.win32.wps_excel_inserter import WPSExcelInserter
@@ -47,7 +47,7 @@ class PasteWorkflow:
         self.ms_excel_inserter = MSExcelInserter()
         self.wps_excel_inserter = WPSExcelInserter()
         self.notification_manager = NotificationManager()
-        self.doc_generator = DocumentGeneratorService()
+        self.doc_generator = DocumentGenerator()
         self.output_executor = OutputExecutor(self.notification_manager)
     
     def execute(self) -> None:
