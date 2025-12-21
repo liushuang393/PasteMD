@@ -2,10 +2,10 @@
 
 import os
 import subprocess
-from typing import Literal, List
+from typing import Literal
 
 from ...utils.logging import log
-from ...domains.spreadsheet.generator import SpreadsheetGenerator
+from ...utils.system_detect import is_windows, is_macos
 
 
 AppType = Literal["word", "wps", "excel", "wps_excel"]
@@ -13,6 +13,47 @@ AppType = Literal["word", "wps", "excel", "wps_excel"]
 
 class AppLauncher:
     """应用唤醒器 - 通过创建文件并用默认应用打开来唤醒应用"""
+    
+    @staticmethod
+    def _open_file_with_default_app(file_path: str) -> bool:
+        """
+        使用默认应用打开文件（跨平台）
+        
+        Args:
+            file_path: 文件的完整路径
+            
+        Returns:
+            True 如果成功打开
+        """
+        try:
+            if is_windows():
+                # Windows: 使用 os.startfile 或 start 命令
+                try:
+                    os.startfile(file_path)
+                    log(f"Successfully opened file with os.startfile: {file_path}")
+                    return True
+                except Exception as e:
+                    log(f"os.startfile failed, trying cmd start: {e}")
+                    subprocess.Popen(
+                        ['cmd', '/c', 'start', '', file_path],
+                        shell=False,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    )
+                    log(f"Successfully opened file with cmd start: {file_path}")
+                    return True
+            elif is_macos():
+                # macOS: 使用 open 命令
+                subprocess.Popen(['open', file_path])
+                log(f"Successfully opened file with open command: {file_path}")
+                return True
+            else:
+                # Linux: 使用 xdg-open 命令
+                subprocess.Popen(['xdg-open', file_path])
+                log(f"Successfully opened file with xdg-open: {file_path}")
+                return True
+        except Exception as e:
+            log(f"Failed to open file with default application: {e}")
+            return False
     
     @staticmethod
     def awaken_and_open_document(docx_path: str) -> bool:
@@ -25,31 +66,11 @@ class AppLauncher:
         Returns:
             True 如果成功打开
         """
-        try:
-            if not os.path.exists(docx_path):
-                log(f"Document file not found: {docx_path}")
-                return False
-            
-            # 使用 subprocess 以正常窗口模式打开文件
-            # CREATE_NEW_CONSOLE 或 SW_SHOWNORMAL 确保窗口在前台
-            try:
-                # 方法1: 使用 start 命令，会在前台打开
-                subprocess.Popen(
-                    ['cmd', '/c', 'start', '', docx_path],
-                    shell=False,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-                log(f"Successfully opened document in foreground: {docx_path}")
-                return True
-            except Exception as e:
-                log(f"Failed to open with subprocess, falling back to os.startfile: {e}")
-                # 回退到 os.startfile
-                os.startfile(docx_path)
-                log(f"Successfully opened document with default application: {docx_path}")
-                return True
-        except Exception as e:
-            log(f"Failed to open document: {e}")
+        if not os.path.exists(docx_path):
+            log(f"Document file not found: {docx_path}")
             return False
+        
+        return AppLauncher._open_file_with_default_app(docx_path)
     
     @staticmethod
     def awaken_and_open_spreadsheet(xlsx_path: str) -> bool:
@@ -62,67 +83,10 @@ class AppLauncher:
         Returns:
             True 如果成功打开
         """
-        try:
-            if not os.path.exists(xlsx_path):
-                log(f"Spreadsheet file not found: {xlsx_path}")
-                return False
-            
-            # 使用 subprocess 以正常窗口模式打开文件
-            try:
-                subprocess.Popen(
-                    ['cmd', '/c', 'start', '', xlsx_path],
-                    shell=False,
-                    creationflags=subprocess.CREATE_NO_WINDOW
-                )
-                log(f"Successfully opened spreadsheet in foreground: {xlsx_path}")
-                return True
-            except Exception as e:
-                log(f"Failed to open with subprocess, falling back to os.startfile: {e}")
-                os.startfile(xlsx_path)
-                log(f"Successfully opened spreadsheet with default application: {xlsx_path}")
-                return True
-        except Exception as e:
-            log(f"Failed to open spreadsheet: {e}")
+        if not os.path.exists(xlsx_path):
+            log(f"Spreadsheet file not found: {xlsx_path}")
             return False
-    
-    @staticmethod
-    def generate_spreadsheet(table_data: List[List[str]], output_path: str,
-                             keep_format: bool = True) -> bool:
-        """
-        仅生成 XLSX 文件（不打开）
         
-        Args:
-            table_data: 二维数组表格数据
-            output_path: 输出 XLSX 文件路径
-            keep_format: 是否保留格式
-            
-        Returns:
-            True 如果成功生成
-        """
-        try:
-            SpreadsheetGenerator.generate_xlsx(table_data, output_path, keep_format)
-            log(f"Successfully generated spreadsheet: {output_path}")
-            return True
-        except Exception as e:
-            log(f"Failed to generate spreadsheet: {e}")
-            return False
-    
-    @staticmethod
-    def generate_and_open_spreadsheet(table_data: List[List[str]], output_path: str,
-                                      keep_format: bool = True) -> bool:
-        """
-        生成 XLSX 文件并用默认应用打开
-        
-        Args:
-            table_data: 二维数组表格数据
-            output_path: 输出 XLSX 文件路径
-            keep_format: 是否保留格式
-            
-        Returns:
-            True 如果成功生成并打开
-        """
-        if not AppLauncher.generate_spreadsheet(table_data, output_path, keep_format):
-            return False
-        return AppLauncher.awaken_and_open_spreadsheet(output_path)
+        return AppLauncher._open_file_with_default_app(xlsx_path)
 
 

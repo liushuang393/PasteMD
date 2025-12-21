@@ -6,6 +6,7 @@ from typing import List, Tuple, Optional
 from ...utils.clipboard import copy_files_to_clipboard
 from ...utils.logging import log
 from ...domains.awakener import AppLauncher
+from ...domains.spreadsheet.generator import SpreadsheetGenerator
 from ...utils.fs import generate_unique_path
 from ...i18n import t
 
@@ -325,31 +326,45 @@ class OutputExecutor:
     
     def _xlsx_open(self, table_data: List[List[str]], output_path: str, keep_format: bool) -> bool:
         """生成并打开 XLSX 文件"""
-        if AppLauncher.generate_and_open_spreadsheet(table_data, output_path, keep_format):
+        try:
+            SpreadsheetGenerator.generate_xlsx(table_data, output_path, keep_format)
+            log(f"Successfully generated spreadsheet: {output_path}")
+            if AppLauncher.awaken_and_open_spreadsheet(output_path):
+                self.notification_manager.notify(
+                    "PasteMD",
+                    t("workflow.table.export_success", rows=len(table_data), path=output_path),
+                    ok=True
+                )
+                return True
+            else:
+                self.notification_manager.notify(
+                    "PasteMD",
+                    t("workflow.table.export_open_failed", path=output_path),
+                    ok=False
+                )
+                return False
+        except Exception as e:
+            log(f"Failed to generate spreadsheet: {e}")
             self.notification_manager.notify(
                 "PasteMD",
-                t("workflow.table.export_success", rows=len(table_data), path=output_path),
-                ok=True
-            )
-            return True
-        else:
-            self.notification_manager.notify(
-                "PasteMD",
-                t("workflow.table.export_open_failed", path=output_path),
+                t("workflow.table.export_failed"),
                 ok=False
             )
             return False
     
     def _xlsx_save(self, table_data: List[List[str]], output_path: str, keep_format: bool) -> bool:
         """生成 XLSX 文件（仅保存）"""
-        if AppLauncher.generate_spreadsheet(table_data, output_path, keep_format):
+        try:
+            SpreadsheetGenerator.generate_xlsx(table_data, output_path, keep_format)
+            log(f"Successfully generated spreadsheet: {output_path}")
             self.notification_manager.notify(
                 "PasteMD",
                 t("workflow.action.saved", path=output_path),
                 ok=True
             )
             return True
-        else:
+        except Exception as e:
+            log(f"Failed to generate spreadsheet: {e}")
             self.notification_manager.notify(
                 "PasteMD",
                 t("workflow.table.export_failed"),
@@ -359,7 +374,9 @@ class OutputExecutor:
     
     def _xlsx_clipboard(self, table_data: List[List[str]], output_path: str, keep_format: bool) -> bool:
         """生成 XLSX 文件并复制到剪贴板"""
-        if AppLauncher.generate_spreadsheet(table_data, output_path, keep_format):
+        try:
+            SpreadsheetGenerator.generate_xlsx(table_data, output_path, keep_format)
+            log(f"Successfully generated spreadsheet: {output_path}")
             copy_files_to_clipboard([output_path])
             self.notification_manager.notify(
                 "PasteMD",
@@ -367,7 +384,8 @@ class OutputExecutor:
                 ok=True
             )
             return True
-        else:
+        except Exception as e:
+            log(f"Failed to generate spreadsheet: {e}")
             self.notification_manager.notify(
                 "PasteMD",
                 t("workflow.table.export_failed"),
