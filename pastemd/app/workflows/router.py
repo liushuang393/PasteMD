@@ -3,6 +3,7 @@
 from ...utils.detector import detect_active_app
 from ...utils.logging import log
 from ...domains.notification.manager import NotificationManager
+from ...i18n import t
 
 from .word_workflow import WordWorkflow
 from .excel_workflow import ExcelWorkflow
@@ -53,7 +54,7 @@ class WorkflowRouter:
             log(f"Router failed: {e}")
             import traceback
             traceback.print_exc()
-            self.notification_manager.notify("PasteMD", "操作失败", ok=False)
+            self.notification_manager.notify("PasteMD", t("workflow.generic.failure"), ok=False)
 
 
 # 全局单例

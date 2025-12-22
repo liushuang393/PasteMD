@@ -10,6 +10,7 @@ from ...utils.html_analyzer import is_plain_html_fragment
 from ...utils.markdown_utils import merge_markdown_contents
 from ...utils.fs import generate_output_path
 from ...core.errors import ClipboardError, PandocError
+from ...i18n import t
 
 
 class WordWorkflow(BaseWorkflow):
@@ -21,9 +22,12 @@ class WordWorkflow(BaseWorkflow):
     
     def execute(self) -> None:
         """执行 Word 工作流"""
+        content_type: str | None = None
+        from_md_file = False
+        md_file_count = 0
         try:
             # 1. 读取剪贴板
-            content_type, content = self._read_clipboard()
+            content_type, content, from_md_file, md_file_count = self._read_clipboard()
             self._log(f"Clipboard content type: {content_type}")
             
             # 2. 预处理
@@ -45,10 +49,27 @@ class WordWorkflow(BaseWorkflow):
             
             # 5. 通知结果
             if result.success:
-                method_str = result.method or "unknown"
-                self._notify_success(f"成功插入到 Word (方式: {method_str})")
+                if result.method:
+                    self._log(f"Insert method: {result.method}")
+
+                app_name = "Word"
+                if from_md_file:
+                    if md_file_count > 1:
+                        msg = t(
+                            "workflow.md_file.insert_success_multi",
+                            count=md_file_count,
+                            app=app_name,
+                        )
+                    else:
+                        msg = t("workflow.md_file.insert_success", app=app_name)
+                elif content_type == "html":
+                    msg = t("workflow.html.insert_success", app=app_name)
+                else:
+                    msg = t("workflow.word.insert_success", app=app_name)
+
+                self._notify_success(msg)
             else:
-                self._notify_error(result.error or "Word 插入失败")
+                self._notify_error(result.error or t("workflow.generic.failure"))
             
             # 6. 可选保存
             if result.success and self.config.get("keep_file", False):
@@ -56,40 +77,43 @@ class WordWorkflow(BaseWorkflow):
         
         except ClipboardError as e:
             self._log(f"Clipboard error: {e}")
-            self._notify_error("剪贴板读取失败")
+            self._notify_error(t("workflow.clipboard.read_failed"))
         except PandocError as e:
             self._log(f"Pandoc error: {e}")
-            self._notify_error("文档转换失败")
+            if content_type == "html":
+                self._notify_error(t("workflow.html.convert_failed_generic"))
+            else:
+                self._notify_error(t("workflow.markdown.convert_failed"))
         except Exception as e:
             self._log(f"Word workflow failed: {e}")
             import traceback
             traceback.print_exc()
-            self._notify_error("操作失败")
+            self._notify_error(t("workflow.generic.failure"))
     
-    def _read_clipboard(self) -> tuple[str, str]:
+    def _read_clipboard(self) -> tuple[str, str, bool, int]:
         """
         读取剪贴板,返回 (类型, 内容)
         
         Returns:
-            ("html" | "markdown", content)
+            (content_type, content, from_md_file, md_file_count)
         """
         # 优先 HTML
         try:
             html = get_clipboard_html(self.config)
             if not is_plain_html_fragment(html):
-                return ("html", html)
+                return ("html", html, False, 0)
         except ClipboardError:
             pass
         
         # 降级 Markdown
         if not is_clipboard_empty():
-            return ("markdown", get_clipboard_text())
+            return ("markdown", get_clipboard_text(), False, 0)
         
         # 尝试 MD 文件
         found, files_data, _ = read_markdown_files_from_clipboard()
         if found:
             merged = merge_markdown_contents(files_data)
-            return ("markdown", merged)
+            return ("markdown", merged, True, len(files_data))
         
         raise ClipboardError("剪贴板为空或无有效内容")
     

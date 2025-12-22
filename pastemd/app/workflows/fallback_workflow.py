@@ -11,6 +11,7 @@ from ...utils.markdown_utils import merge_markdown_contents
 from ...domains.spreadsheet.parser import parse_markdown_table
 from ...utils.fs import generate_output_path
 from ...core.errors import ClipboardError, PandocError
+from ...i18n import t
 
 
 class FallbackWorkflow(BaseWorkflow):
@@ -29,6 +30,7 @@ class FallbackWorkflow(BaseWorkflow):
         - 否则 → 生成 DOCX
         - 然后执行 no_app_action (open/save/clipboard)
         """
+        content_type: str | None = None
         try:
             # 获取配置的无应用动作
             no_app_action = self.config.get("no_app_action", "open")
@@ -45,15 +47,22 @@ class FallbackWorkflow(BaseWorkflow):
         
         except ClipboardError as e:
             self._log(f"Clipboard error: {e}")
-            self._notify_error("剪贴板读取失败或无有效内容")
+            msg = str(e)
+            if "为空" in msg:
+                self._notify_error(t("workflow.clipboard.empty"))
+            else:
+                self._notify_error(t("workflow.clipboard.read_failed"))
         except PandocError as e:
             self._log(f"Pandoc error: {e}")
-            self._notify_error("文档转换失败")
+            if content_type == "html":
+                self._notify_error(t("workflow.html.convert_failed_generic"))
+            else:
+                self._notify_error(t("workflow.markdown.convert_failed"))
         except Exception as e:
             self._log(f"Fallback workflow failed: {e}")
             import traceback
             traceback.print_exc()
-            self._notify_error("操作失败")
+            self._notify_error(t("workflow.generic.failure"))
     
     def _detect_content_type(self) -> str:
         """

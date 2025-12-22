@@ -5,6 +5,7 @@ from ...domains.spreadsheet import WPSExcelPlacer
 from ...utils.clipboard import get_clipboard_text, is_clipboard_empty
 from ...domains.spreadsheet.parser import parse_markdown_table
 from ...core.errors import ClipboardError
+from ...i18n import t
 
 
 class WPSExcelWorkflow(BaseWorkflow):
@@ -17,8 +18,8 @@ class WPSExcelWorkflow(BaseWorkflow):
     def execute(self) -> None:
         """执行 WPS 表格工作流"""
         if not self.config.get("enable_excel", True):
-            self. _log("WPS Excel workflow is disabled in config.")
-            self._notify_error("WPS 表格功能未启用")
+            self._log("WPS Excel workflow is disabled in config.")
+            self._notify_error(t("tray.status.excel_insert_off"))
             return  # 未启用则跳过
         try:
             # 1. 读取剪贴板
@@ -30,10 +31,13 @@ class WPSExcelWorkflow(BaseWorkflow):
             
             # 3. 通知结果
             if result.success:
-                method_str = result.method or "unknown"
-                self._notify_success(f"成功插入到 WPS 表格 (方式: {method_str})")
+                if result.method:
+                    self._log(f"Insert method: {result.method}")
+                self._notify_success(
+                    t("workflow.table.insert_success", rows=len(table_data), app="WPS 表格")
+                )
             else:
-                self._notify_error(result.error or "WPS 表格插入失败")
+                self._notify_error(result.error or t("workflow.generic.failure"))
             
             # 4. 可选保存
             if result.success and self.config.get("keep_file", False):
@@ -41,12 +45,12 @@ class WPSExcelWorkflow(BaseWorkflow):
         
         except ClipboardError as e:
             self._log(f"Clipboard error: {e}")
-            self._notify_error("剪贴板读取失败或无有效表格")
+            self._notify_error(t("workflow.table.invalid_with_app", app="WPS 表格"))
         except Exception as e:
             self._log(f"WPS Excel workflow failed: {e}")
             import traceback
             traceback.print_exc()
-            self._notify_error("操作失败")
+            self._notify_error(t("workflow.generic.failure"))
     
     def _read_clipboard_table(self) -> list:
         """
