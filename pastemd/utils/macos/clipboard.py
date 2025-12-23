@@ -10,7 +10,6 @@ from AppKit import (
 )
 from ...core.errors import ClipboardError
 from ...core.state import app_state
-from ..html_formatter import clean_html_content
 from ..clipboard_file_utils import read_file_with_encoding, filter_markdown_files, read_markdown_files
 from ..logging import log
 
@@ -92,10 +91,8 @@ def get_clipboard_html(config: dict | None = None) -> str:
         # macOS 返回的已经是 HTML 内容字符串，不需要像 Windows 那样解析 CF_HTML 格式
         html_content = str(html_data)
 
-        # 清理 SVG 等不可用内容
-        cleaned = clean_html_content(html_content, config.get("html_formatting"))
-
-        return cleaned
+        # 直接返回原始 HTML，不在剪贴板层进行清理
+        return html_content
 
     except Exception as e:
         raise ClipboardError(f"Failed to read HTML from clipboard: {e}")

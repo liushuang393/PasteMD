@@ -10,7 +10,6 @@ from ctypes import wintypes
 import win32clipboard as wc
 from ...core.errors import ClipboardError
 from ...core.state import app_state
-from ..html_formatter import clean_html_content
 from ..clipboard_file_utils import read_file_with_encoding, filter_markdown_files, read_markdown_files
 from ...utils.logging import log
 from ...core.constants import CLIPBOARD_HTML_WAIT_MS, CLIPBOARD_POLL_INTERVAL_MS
@@ -146,9 +145,8 @@ def get_clipboard_html(config: dict | None = None) -> str:
         else:
             fragment = _extract_html_fragment(data)
 
-        # 清理 SVG 等不可用内容
-        cleaned = clean_html_content(fragment, config.get("html_formatting"))
-        return cleaned
+        # 直接返回原始 HTML Fragment，不在剪贴板层进行清理
+        return fragment
     except Exception as e:
         raise ClipboardError(f"Failed to read HTML from clipboard: {e}") from e
 

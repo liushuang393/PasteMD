@@ -42,6 +42,9 @@ def clean_html_content(html: str, options: Optional[Dict[str, object]] = None) -
 
             if enable_strike_conversion:
                 _convert_strikethrough_to_del(soup)
+            
+            # 清理 LaTeX 公式块中的 <br> 标签
+            _clean_latex_br_tags(soup)
 
             return f"<!DOCTYPE html>\n<meta charset='utf-8'>\n{str(soup)}"
         except Exception:
@@ -100,3 +103,28 @@ def _convert_strikethrough_to_del(soup) -> None:
                     parent.insert(index + i, NavigableString(item))
                 else:
                     parent.insert(index + i, item)
+
+
+def _clean_latex_br_tags(soup) -> None:
+    """
+    清理 HTML 中 LaTeX 公式块内的 <br> 标签。
+    
+    LaTeX 公式块通常包裹在 class="katex" 或 class="katex-display" 的元素中，
+    公式内容的 <br> 标签会破坏 LaTeX 语法，需要移除或替换为换行符。
+    
+    Args:
+        soup: BeautifulSoup 对象，会被原地修改。
+    """
+    if BeautifulSoup is None:
+        return
+    
+    # 查找所有包含 katex 的元素（行内公式和块级公式）
+    katex_elements = soup.find_all(class_=re.compile(r'katex'))
+    
+    for katex_elem in katex_elements:
+        # 在 katex 元素内查找所有 <br> 标签
+        br_tags = katex_elem.find_all('br')
+        
+        for br in br_tags:
+            # 删除 <br> 标签
+            br.replace_with('')

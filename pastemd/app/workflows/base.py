@@ -5,7 +5,7 @@ from ...core.state import app_state
 from ...service.notification.manager import NotificationManager
 from ...service.document import DocumentGenerator
 from ...service.spreadsheet import SpreadsheetGenerator
-from ...service.preprocessor import MarkdownPreprocessor
+from ...service.preprocessor import HtmlPreprocessor, MarkdownPreprocessor
 from ...utils.logging import log
 
 
@@ -45,6 +45,12 @@ class BaseWorkflow(ABC):
         """每次创建新的 Markdown Preprocessor 以使用最新配置"""
         # 不缓存，每次使用最新配置
         return MarkdownPreprocessor(self.config)
+    
+    @property
+    def html_preprocessor(self):
+        """每次创建新的 HTML Preprocessor 以使用最新配置"""
+        # 不缓存，每次使用最新配置
+        return HtmlPreprocessor(self.config)
     
     @abstractmethod
     def execute(self) -> None:
