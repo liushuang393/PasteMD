@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Dict, Optional
 
-from bs4 import BeautifulSoup, NavigableString
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 
 def clean_html_content(soup: BeautifulSoup, options: Optional[Dict[str, object]] = None) -> None:
@@ -99,25 +99,25 @@ def _clean_latex_br_tags(soup) -> None:
             br.replace_with('')
 
 
-def unwrap_li_paragraphs(soup) -> None:
+def unwrap_all_p_div_inside_li(soup, unwrap_tags=("p", "div")) -> None:
     """
-    处理 <li><p>...</p></li>：将 li 下的直接子元素 p “展开/去壳”。
+    清理所有 li 内部(任意深度)的 p/div：只要在 li 子树里就 unwrap。
+    - 包括 ul 下的 li、再嵌套的 ul/li ... 全部处理
+    - 采用“从深到浅”顺序 unwrap，避免结构变化导致漏处理
+    """
+    # 选中所有在 li 里面的 p/div（包括嵌套 li 内的）
+    wrappers = soup.select(",".join(f"li {t}" for t in unwrap_tags))
 
-    目标：
-      - <li><p>文本</p></li> => <li>文本</li>
-      - 如果 <li> 里是 <p>文本</p><ul>...</ul>，则变为 <li>文本<ul>...</ul></li>
-      - 尽量不动嵌套更深的 p（只处理 li 的“直接子 p”）
-    """
+    # 从深到浅排序：父链越长越深，先 unwrap 深层更安全
+    wrappers.sort(key=lambda node: len(list(node.parents)), reverse=True)
+
+    for node in wrappers:
+        # node 可能已被前面的 unwrap 影响而脱离树，做个保护
+        if isinstance(node, Tag) and node.parent is not None:
+            node.unwrap()
+
+    # 可选：把每个 li 头尾多余空白文本清一下
     for li in soup.find_all("li"):
-        # 找出 li 的直接子节点里是 <p> 的那些
-        direct_ps = [c for c in li.contents if getattr(c, "name", None) == "p"]
-        if not direct_ps:
-            continue
-
-        for p in direct_ps:
-            p.unwrap()
-
-        # 清一下 li 开头结尾可能多出来的空白文本节点
         _trim_whitespace_text_nodes(li)
 
 
@@ -148,13 +148,15 @@ def _trim_whitespace_text_nodes(tag) -> None:
         tag.contents[-1].extract()
 
 
-def postprocess_pandoc_html(html: str) -> str:
+def postprocess_pandoc_html_macwps(html: str) -> str:
     """
     后处理 Pandoc 输出的 HTML，修复格式问题。
     
     处理内容：
     1. 修复代码块格式（移除属性标记，恢复换行）
-    2. 清理 data-* 属性（如 data-start, data-end）
+    2. 清理所有样式和多余属性（生成纯净 HTML）
+    3. 修复粗体斜体嵌套
+    4. 清理 Pandoc 扩展语法残留
     
     Args:
         html: Pandoc 输出的 HTML 文本
@@ -164,14 +166,25 @@ def postprocess_pandoc_html(html: str) -> str:
     """
     soup = BeautifulSoup(html, "html.parser")
     
+    # 清理列表中的 p/div 包装
+    unwrap_all_p_div_inside_li(soup)
+
+    # 替换 del 为 s 标签（WPS 兼容）
+    _replace_del_with_s(soup)
+
     # 修复粗体加斜体的嵌套标签（WPS 兼容性）
     _fix_bold_italic_nesting(soup)
     
     # 修复代码块格式
     _fix_pandoc_code_blocks(soup)
     
-    # 清理多余的属性
+    # 清理 Pandoc 扩展语法残留（如 ::: 语法块）
+    _clean_pandoc_fenced_divs(soup)
+    
+    # 清理多余的属性（style, class, data-* 等）
     _clean_pandoc_attributes(soup)
+
+    _fix_task_list_math_issue(soup)
     
     return str(soup)
 
@@ -224,18 +237,38 @@ def _fix_pandoc_code_blocks(soup) -> None:
     """
     修复 Pandoc 输出的代码块格式问题。
     
-    Pandoc 在某些情况下会将代码块输出为：
-    <p><code>{.class! attr="value"} actual code here</code></p>
+    处理两种情况：
+    1. 属性标记格式：<p><code>{.class! attr="value"} actual code here</code></p>
+    2. 复杂结构格式：<div class="sourceCode"><pre><code><span>...</span></code></pre></div>
     
-    需要转换为：
-    <pre><code>actual code here</code></pre>
+    统一转换为简单的：
+    <pre style="white-space: pre-wrap;"><code>actual code here</code></pre>
     
-    同时恢复代码中的换行。
+    使用 white-space: pre-wrap 确保代码块在 WPS 中可以自动换行。
     
     Args:
         soup: BeautifulSoup 对象，会被原地修改。
     """
-    # 查找所有 <p> 标签中包含 <code> 的情况
+    # 处理 Pandoc 生成的 div.sourceCode 复杂结构
+    for div in soup.find_all('div', class_='sourceCode'):
+        # 查找内部的 pre > code 结构
+        pre = div.find('pre')
+        if pre:
+            code = pre.find('code')
+            if code:
+                # 提取所有文本内容（自动合并所有 span 标签中的文本）
+                code_text = code.get_text()
+                
+                # 创建新的简化 pre > code 结构
+                new_pre = soup.new_tag('pre', style='white-space: pre-wrap;')
+                new_code = soup.new_tag('code')
+                new_code.string = code_text
+                new_pre.append(new_code)
+                
+                # 替换整个 div.sourceCode
+                div.replace_with(new_pre)
+    
+    # 处理 <p> 标签中包含 <code> 的情况（属性标记格式）
     for p in soup.find_all('p'):
         # 获取 p 标签的所有子节点（排除纯空白文本节点）
         meaningful_contents = [
@@ -262,8 +295,8 @@ def _fix_pandoc_code_blocks(soup) -> None:
                     # 检测连续的多个空格（通常是 4+ 空格），替换为换行+缩进
                     actual_code = re.sub(r'    +', '\n    ', actual_code)
                     
-                    # 创建新的 pre > code 结构
-                    pre = soup.new_tag('pre')
+                    # 创建新的 pre > code 结构，添加 white-space: pre-wrap
+                    pre = soup.new_tag('pre', style='white-space: pre-wrap;')
                     new_code = soup.new_tag('code')
                     new_code.string = actual_code
                     pre.append(new_code)
@@ -274,18 +307,190 @@ def _fix_pandoc_code_blocks(soup) -> None:
 
 def _clean_pandoc_attributes(soup) -> None:
     """
-    清理 Pandoc 输出的 HTML 中的额外属性。
+    清理 Pandoc 输出的 HTML 中的额外属性，生成纯净的 HTML。
     
     移除：
-    - data-start, data-end（来自某些 Markdown 编辑器的位置信息）
-    - 其他 data-* 属性
+    - style 属性（所有内联样式）
+    - class 属性（CSS 类名）
+    - data-* 属性（自定义数据属性）
+    - 其他非标准属性
+    
+    保留：
+    - id（锚点）
+    - href（链接）
+    - src, alt（图片）
+    - type（列表类型）
+    - colspan, rowspan（表格）
     
     Args:
         soup: BeautifulSoup 对象，会被原地修改。
     """
+    # 定义需要保留的属性白名单
+    allowed_attrs = {
+        'a': ['href', 'id'],
+        'img': ['src', 'alt'],
+        'td': ['colspan', 'rowspan'],
+        'th': ['colspan', 'rowspan'],
+        'ol': ['type', 'start'],
+        'ul': ['type'],
+        # 对于标题和其他标签，只保留 id
+        'h1': ['id'], 'h2': ['id'], 'h3': ['id'], 
+        'h4': ['id'], 'h5': ['id'], 'h6': ['id'],
+    }
+    
     for tag in soup.find_all(True):
-        # 移除所有 data-* 属性
-        attrs_to_del = [attr for attr in tag.attrs if attr.startswith('data-')]
+        # 获取该标签类型允许的属性
+        allowed = allowed_attrs.get(tag.name, ['id'])
+        
+        # 找出需要删除的属性
+        attrs_to_del = [attr for attr in list(tag.attrs.keys()) if attr not in allowed]
+        
+        # 删除不允许的属性
         for attr in attrs_to_del:
             del tag.attrs[attr]
+
+
+def _replace_del_with_s(soup) -> None:
+    """
+    将 <del> 标签替换为 <s> 标签（WPS 更兼容删除线）。
+    保留内容与属性（后续 clean 会清掉 data-*）。
+    """
+    for tag in soup.find_all("del"):
+        tag.name = "s"
+
+
+def _clean_pandoc_fenced_divs(soup) -> None:
+    """
+    清理 Pandoc fenced divs 扩展语法产生的残留文本。
+    
+    Pandoc 在某些情况下会将 ::: 语法块转换为文本，需要清理。
+    例如：:::::::: {.class} -> 应该被移除
+    
+    Args:
+        soup: BeautifulSoup 对象，会被原地修改。
+    """
+    # 查找包含 Pandoc 扩展语法的文本节点
+    for text_node in soup.find_all(text=True):
+        if isinstance(text_node, NavigableString):
+            text = str(text_node)
+            # 匹配以 : 开头的 Pandoc 扩展语法
+            if re.match(r'^:+\s*\{[^}]*\}', text.strip()):
+                # 完全移除这类文本
+                text_node.extract()
+            elif text.strip().startswith(':::'):
+                # 移除包含 ::: 的行
+                text_node.extract()
+
+
+def clean_html_for_wps(html: str) -> str:
+    """
+    专门为 WPS 工作流清理输入的 HTML，去除所有样式和扩展属性。
+    
+    这个函数在 Pandoc 转换之前调用，清理输入 HTML 中的：
+    - style 属性（内联样式）
+    - class 属性（CSS 类名）
+    - 所有 data-* 自定义属性
+    - 其他非标准属性（如 path-to-node, _ngcontent-*, hveid, ved 等）
+    - 保护任务列表标记，避免被 Pandoc 误识别为数学公式
+    
+    只保留必要的语义属性（id, href, src, alt 等）。
+    
+    Args:
+        html: 原始 HTML 字符串
+        
+    Returns:
+        清理后的 HTML 字符串
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # 先保护任务列表标记，避免 Pandoc 将 [x] 转义为 \[x\]，导致被识别为数学公式
+    _protect_task_list_brackets(soup)
+    
+    # 定义需要保留的属性白名单
+    allowed_attrs = {
+        'a': ['href', 'id', 'title'],
+        'img': ['src', 'alt', 'title'],
+        'td': ['colspan', 'rowspan'],
+        'th': ['colspan', 'rowspan'],
+        'ol': ['type', 'start'],
+        'ul': ['type'],
+        # 对于其他标签，只保留 id 和 title
+    }
+    
+    for tag in soup.find_all(True):
+        # 获取该标签类型允许的属性
+        allowed = allowed_attrs.get(tag.name, ['id', 'title'])
+        
+        # 找出需要删除的属性
+        attrs_to_del = [attr for attr in list(tag.attrs.keys()) if attr not in allowed]
+        
+        # 删除不允许的属性
+        for attr in attrs_to_del:
+            del tag.attrs[attr]
+    
+    return str(soup)
+
+
+def _protect_task_list_brackets(soup) -> None:
+    """
+    保护 HTML 中的任务列表标记，避免被 Pandoc 转义和误识别。
+    
+    将 [x] 和 [ ] 替换为特殊标记：
+    - [x] -> ##TASK_CHECKED##
+    - [ ] -> ##TASK_UNCHECKED##
+    
+    这些特殊标记不会被 Pandoc 识别为 Markdown 语法或数学公式。
+    
+    Args:
+        soup: BeautifulSoup 对象，会被原地修改。
+    """
+    # 遍历所有文本节点
+    for text_node in soup.find_all(text=True):
+        if isinstance(text_node, NavigableString):
+            text = str(text_node)
+            # 只处理包含任务列表标记的文本
+            if '[x]' in text or '[ ]' in text or '[X]' in text:
+                # 替换为特殊标记
+                text = text.replace('[x]', '##TASK_CHECKED##')
+                text = text.replace('[ ]', '##TASK_UNCHECKED##')
+                text_node.replace_with(text)
+
+
+def _restore_task_list_brackets(soup) -> None:
+    """
+    恢复被保护的任务列表标记。
+    
+    将特殊标记恢复为原始的方括号格式：
+    - ##TASK_CHECKED## -> [x]
+    - ##TASK_UNCHECKED## -> [ ]
+    
+    Args:
+        soup: BeautifulSoup 对象，会被原地修改。
+    """
+    # 遍历所有文本节点
+    for text_node in soup.find_all(text=True):
+        if isinstance(text_node, NavigableString):
+            text = str(text_node)
+            # 只处理包含特殊标记的文本
+            if '##TASK_CHECKED##' in text or '##TASK_UNCHECKED##' in text:
+                # 恢复为原始标记
+                text = text.replace('##TASK_CHECKED##', '[x]')
+                text = text.replace('##TASK_UNCHECKED##', '[ ]')
+                text_node.replace_with(text)
+
+
+def _fix_task_list_math_issue(soup) -> None:
+    """
+    恢复被保护的任务列表标记。
+    
+    在 clean_html_for_wps 中，任务列表标记被替换为特殊标记以避免被 Pandoc 误识别。
+    这个函数将特殊标记恢复为原始的方括号格式。
+    
+    Args:
+        soup: BeautifulSoup 对象，会被原地修改。
+    """
+    # 恢复任务列表标记
+    _restore_task_list_brackets(soup)
+
+
 

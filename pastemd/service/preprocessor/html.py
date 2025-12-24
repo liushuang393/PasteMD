@@ -2,7 +2,7 @@
 
 from bs4 import BeautifulSoup
 from .base import BasePreprocessor
-from ...utils.html_formatter import clean_html_content, convert_strikethrough_to_del, remove_empty_paragraphs, unwrap_li_paragraphs
+from ...utils.html_formatter import clean_html_content, convert_strikethrough_to_del
 from ...utils.logging import log
 
 
@@ -35,8 +35,8 @@ class HtmlPreprocessor(BasePreprocessor):
         if config.get("convert_strikethrough", True):
             convert_strikethrough_to_del(soup)
 
-        unwrap_li_paragraphs(soup)
-        remove_empty_paragraphs(soup)
+        # unwrap_li_paragraphs(soup)
+        # remove_empty_paragraphs(soup)
 
         html_output = str(soup)
         

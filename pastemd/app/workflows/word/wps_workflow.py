@@ -1,13 +1,11 @@
 """WPS document workflow."""
-import sys
-
 from pastemd.app.workflows.word.word_base import WordBaseWorkflow
 from pastemd.service.document import WPSPlacer
 from pastemd.i18n import t
 
 from pastemd.core.errors import ClipboardError, PandocError
 from pastemd.utils.system_detect import is_windows
-from pastemd.utils.html_formatter import postprocess_pandoc_html
+from pastemd.utils.html_formatter import postprocess_pandoc_html_macwps, clean_html_for_wps
 
 
 class WPSWorkflow(WordBaseWorkflow):
@@ -44,6 +42,8 @@ class WPSWorkflow(WordBaseWorkflow):
             config = self.config.copy()
             config["Keep_original_formula"] = True  # 保留公式为 LaTeX 文本
             if content_type == "html":
+                # 在 Pandoc 转换之前清理 HTML，去除样式和扩展属性
+                content = clean_html_for_wps(content)
                 content = self.html_preprocessor.process(content, config)
                 md_text = self.doc_generator.convert_html_to_markdown_text(
                     content, config
@@ -51,13 +51,12 @@ class WPSWorkflow(WordBaseWorkflow):
             else:
                 # markdown
                 md_text = self.markdown_preprocessor.process(content, config)
-            
+
             html_text = self.doc_generator.convert_markdown_to_html_text(
                 md_text, config
             )
-            
             # 后处理 Pandoc 输出的 HTML，修复代码块格式等问题
-            html_text = postprocess_pandoc_html(html_text)
+            html_text = postprocess_pandoc_html_macwps(html_text)
 
             # 内容落地由 placer 负责（写剪贴板 + Cmd+V）
             result = self.placer.place(
