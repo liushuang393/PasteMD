@@ -556,7 +556,11 @@ class TrayMenuManager:
     
     def _on_open_about_page(self, icon, item):
         """打开关于页面"""
-        about_url = "http://pastemd.richqaq.cn"
+        # macOS 使用专门的介绍页面
+        if is_macos():
+            about_url = "https://pastemd.richqaq.cn/macos"
+        else:
+            about_url = "http://pastemd.richqaq.cn"
         try:
             webbrowser.open(about_url)
             log(f"Opening about page: {about_url}")

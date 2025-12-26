@@ -88,3 +88,12 @@ def get_app_icon_path() -> str:
 def get_app_png_path() -> str:
     """获取应用图标路径 (.png)"""
     return resource_path(os.path.join("assets", "icons", "logo.png"))
+
+
+def is_first_launch() -> bool:
+    """检测是否为首次启动（通过检查配置文件和日志文件是否存在）"""
+    config_path = get_config_path()
+    log_path = get_log_path()
+
+    # 如果配置文件和日志文件都不存在，则认为是首次启动
+    return not os.path.exists(config_path) and not os.path.exists(log_path)

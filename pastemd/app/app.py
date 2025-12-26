@@ -4,6 +4,16 @@ import sys
 import threading
 import queue
 import tkinter as tk
+from ..config.paths import get_app_icon_path, is_first_launch
+from ..utils.system_detect import is_macos
+
+# macOS: 首次启动时打开使用说明页面
+if is_macos() and is_first_launch():
+    try:
+        import webbrowser
+        webbrowser.open("https://pastemd.richqaq.cn/macos")
+    except Exception:
+        pass
 
 # 设置 Windows 应用程序 ID (仅在 Windows 上)
 try:
@@ -14,12 +24,11 @@ except Exception:
     pass
 
 from ..utils.dpi import set_dpi_awareness
-from ..utils.system_detect import is_macos
+
 from .. import __version__
 from ..core.state import app_state
 from ..core.singleton import check_single_instance
 from ..config.loader import ConfigLoader
-from ..config.paths import get_app_icon_path
 from ..utils.logging import log
 from ..utils.version_checker import VersionChecker
 from ..service.notification.manager import NotificationManager
