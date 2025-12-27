@@ -32,7 +32,10 @@ class HtmlPreprocessor(BasePreprocessor):
         soup = BeautifulSoup(html, "html.parser")
         clean_html_content(soup, config)
 
-        if config.get("convert_strikethrough", True):
+        html_formatting = config.get("html_formatting") or config.get("Html_formatting") or {}
+        if not isinstance(html_formatting, dict):
+            html_formatting = {}
+        if html_formatting.get("strikethrough_to_del", True):
             convert_strikethrough_to_del(soup)
 
         # unwrap_li_paragraphs(soup)
