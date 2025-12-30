@@ -17,10 +17,12 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Word%20%7C%20WPS-5e8d36?style=flat-square&logo=windows&logoColor=white" alt="Platform">
 </p>
 
-<p align="center"> 
+<p align="center">
   <a href="docs/md/README.en.md">English</a>
   |
   <a href="README.md">简体中文</a>
+  |
+  <a href="docs/md/README.ja.md">日本語</a>
 </p>
 
 > 在写论文或报告时，从 ChatGPT / DeepSeek 等 AI 网站中复制出来的公式在 Word 里总是乱码？Markdown 表格复制到 Excel 总是不行？**PasteMD 就是为了解决这个问题而生的，嘿嘿**
