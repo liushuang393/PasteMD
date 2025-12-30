@@ -10,16 +10,18 @@ from typing import Dict, Iterator, Optional
 from ..config.paths import resource_path
 
 
-DEFAULT_LANGUAGE = "zh"
+DEFAULT_LANGUAGE = "ja"
 
 # Display names for each supported language (order preserved).
 LANGUAGE_DISPLAY_NAMES: Dict[str, str] = {
+    "ja": "日本語",
     "zh": "简体中文",
     "en": "English",
 }
 
 _LOCALE_PACKAGE = "pastemd.i18n.locales"
 _LOCALE_FILES = {
+    "ja": "ja.json",
     "zh": "zh.json",
     "en": "en.json",
 }
@@ -38,7 +40,6 @@ def _normalize_language_code(language: Optional[str]) -> Optional[str]:
 
 
 def _load_translations(language: str) -> Dict[str, str]:
-    """Load translation dictionary for a language (with caching) from file system."""
     normalized = _normalize_language_code(language) or DEFAULT_LANGUAGE
     if normalized in _loaded_translations:
         return _loaded_translations[normalized]
@@ -48,23 +49,29 @@ def _load_translations(language: str) -> Dict[str, str]:
 
     if file_name:
         try:
-            json_path = resource_path(os.path.join("i18n", "locales", file_name))
-            if not os.path.isfile(json_path):
-                json_path = os.path.join(os.path.join("pastemd", "i18n", "locales", file_name))
+            # 统一、唯一的正确路径
+            json_path = resource_path(
+                os.path.join("pastemd", "i18n", "locales", file_name)
+            )
 
             with open(json_path, "r", encoding="utf-8") as fp:
                 loaded = json.load(fp)
 
             if isinstance(loaded, dict):
                 data = {str(k): str(v) for k, v in loaded.items()}
-        
+
         except FileNotFoundError:
-            _logger.warning("Translation file missing for %s at %s", normalized, json_path)
+            _logger.warning(
+                "Translation file missing for %s at %s", normalized, json_path
+            )
         except Exception as exc:
-            _logger.warning("Failed to load translations for %s: %s", normalized, exc)
+            _logger.warning(
+                "Failed to load translations for %s: %s", normalized, exc
+            )
 
     _loaded_translations[normalized] = data or {}
     return _loaded_translations[normalized]
+
 
 
 # Ensure default translations are available for fallback.

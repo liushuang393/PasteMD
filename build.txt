@@ -1,0 +1,16 @@
+py -m PyInstaller --clean -F -w -n PasteMD ^
+ --icon assets\icons\logo.ico ^
+ --add-data "assets\icons;assets\icons" ^
+ --add-data "pastemd\i18n\locales\*.json;pastemd\i18n\locales" ^
+ --add-data "pastemd\lua;pastemd\lua" ^
+ --hidden-import plyer.platforms.win.notification ^
+ main.py
+
+
+py -m PyInstaller --clean -w -n PasteMD ^
+  --add-data "assets\icons;assets\icons" ^
+  --add-data "pastemd\i18n\locales;pastemd\i18n\locales" ^
+  --add-data "pastemd\lua;pastemd\lua" ^
+  --hidden-import plyer.platforms.win.notification ^
+  main.py
+
